@@ -1,31 +1,22 @@
 import React, { useState, useEffect } from 'react';
 
-// Utility function to generate a unique short URL
 const generateShortURL = (longURL) => {
-  // Simple base62 encoding for creating unique short URLs
   const characters = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789';
   const base = characters.length;
-  
-  // Use timestamp and hash of long URL to create unique identifier
   const hash = longURL.split('').reduce((acc, char) => {
     return ((acc << 5) - acc) + char.charCodeAt(0);
   }, 0);
-  
   const timestamp = Date.now();
   const seed = hash + timestamp;
-  
   let shortCode = '';
   let num = Math.abs(seed);
-  
   for (let i = 0; i < 6; i++) {
     shortCode = characters[num % base] + shortCode;
     num = Math.floor(num / base);
   }
-  
   return shortCode;
 };
 
-// URL validation function
 const isValidURL = (url) => {
   try {
     new URL(url);
@@ -41,7 +32,6 @@ function App() {
   const [error, setError] = useState('');
   const [copiedURL, setCopiedURL] = useState(null);
 
-  // Load existing URLs from localStorage on component mount
   useEffect(() => {
     const savedURLs = localStorage.getItem('shortenedURLs');
     if (savedURLs) {
@@ -49,54 +39,38 @@ function App() {
     }
   }, []);
 
-  // Save URLs to localStorage whenever the list changes
   useEffect(() => {
     localStorage.setItem('shortenedURLs', JSON.stringify(shortenedURLs));
   }, [shortenedURLs]);
 
   const handleShortenURL = () => {
-    // Reset error
     setError('');
-
-    // Validate URL
     if (!longURL) {
       setError('Please enter a URL');
       return;
     }
-
     if (!isValidURL(longURL)) {
       setError('Invalid URL format');
       return;
     }
-
-    // Check for existing short URL
     const existingURL = shortenedURLs.find(url => url.original === longURL);
     if (existingURL) {
       setError('URL already shortened');
       return;
     }
-
-    // Generate short URL
     const shortURL = generateShortURL(longURL);
-    
-    // Create new URL entry
     const newURLEntry = {
       original: longURL,
       shortened: `http://short.url/${shortURL}`,
       shortCode: shortURL
     };
-
-    // Update state and localStorage
     setShortenedURLs([...shortenedURLs, newURLEntry]);
-    // Clear input after successful shortening
     setLongURL('');
   };
 
   const handleCopyURL = (url) => {
     navigator.clipboard.writeText(url).then(() => {
       setCopiedURL(url);
-      
-      // Reset copied state after 2 seconds
       setTimeout(() => setCopiedURL(null), 2000);
     });
   };
@@ -106,64 +80,64 @@ function App() {
   };
 
   return (
-    <div className="min-h-screen bg-gray-100 p-6">
-      <div className="max-w-2xl mx-auto">
-        <h1 className="text-3xl font-bold text-center mb-6">URL Shortener</h1>
-        
-        <div className="bg-white shadow-md rounded-lg p-6 mb-6">
-          <div className="flex space-x-2">
-            <input 
-              className="flex-grow border border-gray-300 rounded-md p-2"
-              placeholder="Enter your long URL here" 
-              value={longURL}
-              onChange={(e) => setLongURL(e.target.value)}
-            />
-            <button 
-              className="bg-blue-500 text-white px-4 py-2 rounded-md hover:bg-blue-600 transition-colors"
-              onClick={handleShortenURL}
-            >
-              Shorten
-            </button>
-          </div>
-          {error && (
-            <p className="text-red-500 mt-2">{error}</p>
-          )}
+    <div className="min-h-screen bg-gradient-to-br from-blue-100 via-blue-200 to-blue-300 p-6">
+      <div className="max-w-3xl mx-auto bg-white rounded-lg shadow-lg p-8">
+        <h1 className="text-4xl font-extrabold text-blue-700 text-center mb-8">URL Shortener</h1>
+
+        <div className="flex flex-col md:flex-row gap-4 mb-6">
+          <input
+            className="flex-grow border border-gray-300 rounded-lg p-3 focus:outline-none focus:ring-2 focus:ring-blue-500"
+            placeholder="Enter your long URL here"
+            value={longURL}
+            onChange={(e) => setLongURL(e.target.value)}
+          />
+          <button
+            className="bg-blue-500 text-white px-6 py-3 rounded-lg font-medium hover:bg-blue-600 transition-all shadow-md"
+            onClick={handleShortenURL}
+          >
+            Shorten
+          </button>
         </div>
+        {error && (
+          <p className="text-red-500 text-center mb-4">{error}</p>
+        )}
 
         {shortenedURLs.length > 0 && (
-          <div className="bg-white shadow-md rounded-lg p-6">
-            <h2 className="text-xl font-semibold mb-4">Shortened URLs</h2>
-            {shortenedURLs.map((url, index) => (
-              <div 
-                key={index} 
-                className="flex justify-between items-center mb-4 p-3 bg-gray-50 rounded shadow"
-              >
-                <div>
-                  <div className="font-semibold">
-                    Original: 
-                    <span 
-                      className="text-blue-600 ml-2 cursor-pointer hover:underline"
-                      onClick={() => handleRedirect(url.original)}
-                    >
-                      {url.original}
-                    </span>
-                  </div>
-                  <div className="text-green-600">
-                    Shortened: {url.shortened}
-                  </div>
-                </div>
-                <button 
-                  className={`px-3 py-2 rounded-md transition-colors ${
-                    copiedURL === url.shortened 
-                    ? "bg-green-500 text-white" 
-                    : "bg-gray-200 hover:bg-gray-300"
-                  }`}
-                  onClick={() => handleCopyURL(url.shortened)}
+          <div>
+            <h2 className="text-2xl font-bold text-blue-700 mb-4">Your Shortened URLs</h2>
+            <div className="space-y-4">
+              {shortenedURLs.map((url, index) => (
+                <div
+                  key={index}
+                  className="flex items-center justify-between bg-blue-50 border border-blue-200 rounded-lg p-4 shadow-sm"
                 >
-                  {copiedURL === url.shortened ? 'Copied!' : 'Copy'}
-                </button>
-              </div>
-            ))}
+                  <div>
+                    <p className="text-gray-700 font-medium">
+                      <span className="font-semibold text-gray-900">Original:</span>{' '}
+                      <span
+                        className="text-blue-600 underline cursor-pointer hover:text-blue-800"
+                        onClick={() => handleRedirect(url.original)}
+                      >
+                        {url.original}
+                      </span>
+                    </p>
+                    <p className="text-green-700 font-semibold">
+                      Shortened: <span>{url.shortened}</span>
+                    </p>
+                  </div>
+                  <button
+                    className={`px-4 py-2 rounded-lg font-medium transition-all ${
+                      copiedURL === url.shortened
+                        ? 'bg-green-500 text-white'
+                        : 'bg-gray-200 hover:bg-gray-300'
+                    }`}
+                    onClick={() => handleCopyURL(url.shortened)}
+                  >
+                    {copiedURL === url.shortened ? 'Copied!' : 'Copy'}
+                  </button>
+                </div>
+              ))}
+            </div>
           </div>
         )}
       </div>
